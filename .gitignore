@@ -1,0 +1,29 @@
+*.o
+*.out
+*.a
+*.so
+*.exe
+
+
+/build/
+/bin/
+/obj/
+
+# IDE 
+*.swp
+*.swo
+*.bak
+*.tmp
+*.log
+
+# GCC/Clang
+*.d
+*.gcda
+*.gcno
+*.gcov
+
+# Visual Studio Code
+.vscode/
+
+# Valgrind Logları
+valgrind-out.txt
