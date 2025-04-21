@@ -1,0 +1,119 @@
+------------------------------------------------------------------------
+include "../memoire.lus"
+
+node PC(
+  CLK    : bool;       -- Horloge --ce n'est pas utilisé dans le code , juste pour la simulation
+  RESET  : bool;       -- Reset synchrone (actif haut)
+  Zexp   : bool;       -- Flag EXP = 0
+  C      : bool;       -- Flag Carry (pour modulo)
+  Odd    : bool        -- Flag EXP impair (LSB)
+)
+returns (
+  -- Signaux de chargement
+  chExp, chCode, chN, chM : bool;
+  -- Sélection entrée
+  selExt : bool;
+  -- Contrôle multiplexeurs
+  selOp1 : bool^2;
+  selOp2 : bool;
+  -- Commande UAL
+  opUAL  : bool^2;
+  -- Indicateur de fin
+  done   : bool;
+  --signale de mise à 1
+  mise_1 : bool;
+  -- Signaux de débogage
+  etat_courant : bool^11
+
+);
+var
+  st, st_next : bool^11;   -- vecteurs un‑among‑11
+  
+let
+  st[0] = bascule(st_next[0], true , false, RESET); --initial;
+  st[1..10] = map <<bascule;10>>(
+    st_next[1..10], -- Entrée D
+    true^10,        -- CHAR toujours actif
+    RESET^10,       -- Reset synchrone
+    false^10        -- Set initial
+  );
+
+  ------------------------------------------------------------------------
+  -- 3) Machine à états (version optimisée)
+  st_next = [
+
+   -- État 0 (initCode) → État 1 (loopTest)
+    RESET,
+
+    -- Etat 1 : exp>0
+    st[0] or (st[8] and not C),
+
+    -- État 2 : (exp & 1) > 0 
+    st[1] and not Zexp ,
+
+    -- État 3: code = code * m
+    st[2] and Odd,
+
+    -- État 4 : code >= n
+    st[3] or st[5],
+
+    -- État 5: cpde = code - n;
+    st[4] and C,
+
+    -- État 6: exp = exp >> 1
+    (st[2] and not Odd) or (st[4] and not C),
+
+   -- État 7 : m = m*n
+    st[6],
+
+    -- État 8 : m>= n
+    st[7] or st[9],
+
+    -- État 9 : m = m - n
+    st[8] and C,
+
+    -- État 10 : m = m >> 1
+    st[1] and Zexp
+  ];
+
+  ------------------------------------------------------------------------
+  -- 4) Génération des signaux de contrôle (version clarifiée)
+  mise_1 = st[0];
+  -- Chargements initiaux
+  chCode = st[0] or st[3] or st[5] ;
+  chExp  = st[6];
+  chM = st[7] or st[9]; 
+
+  -- On n'utilise pas selExt, chN  comme nous ne faisons que les affectations au debut de trois scanf 
+  selExt = st[0];
+  chN  = false;
+  
+  -- Sélection entrée externe pendant l'init
+  --selExt = st[0];
+
+  -- Contrôle des multiplexeurs (table de vérité optimisée)
+  selOp1 = [
+    -- Bit 0: 1 pour M
+    st[7] or st[8] or st[9],
+
+    -- Bit 1: 1 pour  Exp 
+    st[1] or st[2] or st[6]
+    
+  ];
+
+  -- selOp2 = 1 pour N dans multiply(5)/shift(6)/square(7)
+  selOp2 = st[4] or st[5] or st[8] or st[9];
+
+  -- Commande UAL (nouveau codage plus lisible)
+  opUAL = [
+    st[1] or st[2] or st[3] or st[7],
+    st[1] or st[2] or st[6]
+    
+  ];
+
+  -- Signal de fin
+  done = st[10];
+
+  -- Nouveau: visualisation de l'état courant pour débogage
+  etat_courant = st;
+tel

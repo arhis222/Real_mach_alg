@@ -1,0 +1,31 @@
+include "PO/5.lus"
+include "PC/PC.lus"
+
+
+node test_crypto() returns (code_val : int);
+var
+  busIn : bool^8;
+  selExt, chM, chExp, chN, chCode : bool;
+  selOp1 : bool^2;
+  selOp2 : bool;
+  opUAL : bool^2;
+  done : bool;
+  busOut : bool^8;
+  Z, C, Odd : bool;
+let
+  -- Simüle edilecek veriler (sabit)
+  busIn = entierbool<<8>>(2); -- m = 2 (örnek)
+  selExt = true; -- başlangıçta true, sonra false
+  chM = true;    -- ilk turda M yükle
+  chExp = true;  -- EXP yükle
+  chN = true;    -- N yükle
+  chCode = true; -- CODE = 1 başlat
+  selOp1 = [false, false]; -- dummy (başlangıçta önemli değil)
+  selOp2 = false;
+  opUAL = [false, false];
+  (busOut, Z, C, Odd, _, _, _, _) = PO8(
+    true, false, selExt, busIn, chCode, chM, chExp, chN,
+    selOp1, selOp2, opUAL, true
+  );
+  code_val = entiernat<<8>>(busOut);
+tel

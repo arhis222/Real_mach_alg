@@ -1,0 +1,86 @@
+-- Instruction	    |Op 1	   |Op 2	|Opération	    |Résultat chargé dans
+-- code ← code * m	|CODE	   |M	    |MUL	        |CODE
+-- m ← m * m	    |M	       |M	    |MUL	        |M
+-- code ← code – n	|CODE	   |N	    |SUB	        |CODE
+-- exp ← exp >> 1	|EXP	   |–	    |SHR1	        |EXP
+
+-- Il nous faut donc quatre traitements dans l’UAL : PASS‑OP1, SUB, MUL, SHR1 (shift logique d’un bit vers la droite).
+
+-- Codage des commandes opUAL
+-- On garde un codage compact sur 2 bits :
+
+-- opUAL[1:0]|Signification	                     |Drapeaux générés
+-- 00	     |   SUB (Op 1 – Op 2)	             |  Z, C (emprunt), N
+-- 01	     |   MUL (Op 1 × Op 2)	             |  Z
+-- 10	     |   SHR1 (décalage à droite de Op 1)|	Z, C (bit perdu)
+-- 11	     |   PASS‑OP1 (simple recopie d’Op 1)|	Z (=0 ?),Odd
+
+-- --------------------------------------------------------------------------
+
+-- Définition d'un soustracteur n bits
+include "../multv6base2.lus"
+include "../entierv6.lus"
+include "../UALCryptoV6.lus"
+
+function subnbits<<const n: int>>(A, B: bool^n) returns (S: bool^n; Borrow: bool);
+var
+    B_out: bool^n;
+let
+    -- Complément à 2 de B pour la soustraction (A - B = A + (~B + 1))
+    B_out = map<<not, n>>(B); -- Complément à 1 en inversant les bits
+    (S, Borrow) = add_n_bits<<n>>(A, B_out, true); -- +1 pour le complément à 2
+tel;
+
+
+-- Notre définition de l'UAL
+function UAL<<const n: int>>(
+    OpUAL: bool^2;       -- Commande de l'UAL (2 bits)
+    Op1, Op2: bool^n;    -- Opérandes (n bits)
+) 
+returns (
+    C, Z, Odd: bool;  -- Drapeaux de statut
+    Result: bool^n    -- Résultat de l'UAL (n bits)
+);
+var
+    Mult_Result: bool^(2*n);  -- Résultat de la multiplication (2*n bits)
+    Sub_Result: bool^n;       -- Résultat de la soustraction
+    Borrow: bool;             -- Retenue de la soustraction
+    Shift_Result: bool^n;     -- Résultat du décalage
+    Exp_Is_Odd: bool;         -- EXP & 1 = 1 ?
+let
+    -- Multiplication (code * m)
+    --- On évite de faire le calcul selon OpUAL
+    Mult_Result = multnbits<<n>>(Op1, Op2);
+    -- Soustraction (pour le modulo)
+    (Sub_Result, Borrow) = subnbits<<n>>(Op1, Op2);
+    -- Décalage à droite (exp >> 1)
+    Shift_Result = shiftl<<n>>(Op1, false) ;
+
+    -- Résultat final (selon OpUAL)
+    Result = map <<mux4, n>>(
+        OpUAL[1]^n, OpUAL[0]^n,
+        Sub_Result, Mult_Result[0..n-1], Shift_Result, Op1
+     );
+    -- Calcul des flags
+    Z = (Result = false^n);  -- Z: EXP = 0 ?
+    Exp_Is_Odd = Result[0];            -- EXP & 1 = 1 ?
+
+    C = not Borrow;             -- Emprunt de la soustraction
+    Odd = Exp_Is_Odd;             -- EXP & 1 = 1 ?
+    
+
+    
+tel
+
+-- Exemple d'utilisation de l'UAL comme l'exemple donné dans le UALcryptoV6
+function ualaff_2<<const n:int>>(  A , B : bool^n ; OpUAL : bool^2 )
+returns ( C,Z,Odd : bool  ; T : bool^n;  AE,BE,R:int );
+let
+(C,Z,Odd,T )=UAL<<n>>( OpUAL, A , B );
+
+R=entiernat<<n>>(T);
+AE=entiernat<<n>>(A);
+BE=entiernat<<n>>(B);
+
+tel;
+node ualinst_2=ualaff<<a>>;

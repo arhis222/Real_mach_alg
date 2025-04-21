@@ -1,0 +1,101 @@
+-- 1) On inclut d’abord tout ce qu’il faut :
+--    • Les bascules les registres et UAL à n bits
+include "../memoire.lus"
+include "3.lus"
+include "4.lus"
+include "../entierv6.lus"
+include "../multv6base2.lus"
+include "../UALCryptoV6.lus"
+
+
+-------------------------------------------------------------------
+-- 2) Node PO générique à n bits -----------------------------------
+------------------------------------------------------------------
+node PO <<const n:int>>(
+  Clock    : bool;      -- horloge
+  Reset    : bool;      -- reset synchrone =1
+  selExt   : bool;      -- 1 = charger depuis busIn (initialisation), 0 = recirculer UAL
+  busIn    : bool^n;    -- bus d’entrée externe (M, EXP ou N)
+  chCode   : bool;      -- load CODE
+  chM      : bool;      -- load M
+  chExp    : bool;      -- load EXP
+  chN      : bool;      -- load N
+  selOp1   : bool^2;    -- code 00..11 pour choisir CODE/M/EXP/N en op1
+  selOp2   : bool;      -- code 0 1 pour choisir M/N en op2
+  opUAL    : bool^2 ;    -- commande UAL (00=sub, 01=mul, 10=shr1, 11=pass)
+  mise_1    : bool      -- mise à 1 de CODE (pour le premier tour)
+)
+returns (
+  busOut   : bool^n;    -- seule sortie visible : CODE
+  Z, C, Odd     : bool;     -- flags Zero et Carry (emprunt)
+  CodeInt, MInt, NInt, ExpInt : int  -- pour le debug
+);
+var
+  CODE, M, EXP, Nreg : bool^n;  -- registres internes
+  op1, op2          : bool^n;  -- bus opérandes vers l’UAL
+  resUAL            : bool^n;  -- résultat de l’UAL
+  Borrow, Zflag : bool;     -- emprunt, zero renvoyés par l’UAL
+  setVecCode: bool^n;  -- vecteur de set pour CODE
+let
+
+  -----------------------------------------------------------------
+  setVecCode = [true] | false^(n-1); -- vecteur à 1 seulement en position 0
+  -- CODE = if mise_1 then [true] | registre_n_bits<<n>>(Clock, chCode, Reset, false, 
+  --            if selExt then busIn else resUAL)
+  --            else registre_n_bits<<n>>(Clock, chCode, Reset, false,
+  --            if selExt then busIn else resUAL);
+
+    -- Instanciation "à la main" de CODE via map<<bascule;n>> pour passer setVecCode
+    CODE = map <<bascule; n>>(
+          -- ent : si phase init (selExt) on prend busIn, sinon resUAL
+          if selExt then busIn else resUAL,
+          -- char  : chCode répliqué
+          chCode^n,
+          -- reset : Reset répliqué
+          Reset^n,
+          -- set   : notre setVecCode
+          if mise_1 then setVecCode else false^n
+        );
+  
+  
+
+  -- On charge CODE en premier, puis les autres registres
+  --peut etre false au lieu de  Reset and not mise_1
+  M    = registre_n_bits<<n>>(Clock, chM, Reset and not mise_1, false, 
+             if selExt then busIn else resUAL);
+  EXP  = registre_n_bits<<n>>(Clock, chExp, Reset and not mise_1, false, 
+             if selExt then busIn else resUAL);
+  Nreg = registre_n_bits<<n>>(Clock, chN, Reset and not mise_1, false, 
+             if selExt then busIn else resUAL);
+
+  -----------------------------------------------------------------
+  -- 4) Multiplexeurs 4:1 et 2:1 pour sélectionner les deux opérandes
+  op1 = map <<mux4; n>>(
+          selOp1[1]^n, selOp1[0]^n,
+          CODE, M, EXP, Nreg);
+
+  op2 = map <<mux1; n>>(
+          selOp2^n,
+          Nreg, M);
+
+  -----------------------------------------------------------------
+  -- 5) Appel de l’UAL (issue de 3.lus) :
+  --    UAL(opUAL, op1, op2) returns (C, Z, Odd, Result)
+  (Borrow, Zflag, Odd, resUAL) = UAL<<n>>(opUAL, op1, op2);
+
+  -----------------------------------------------------------------
+  -- 6) Bus de sortie et drapeaux 
+  busOut = CODE;    -- on n’exporte que CODE
+  C      = Borrow;  -- emprunt de la soustraction
+  Z      = Zflag;   -- résultat nul ?
+
+  --pour le voir mieux --debug 
+  CodeInt = entiernat<<n>>(CODE);
+  MInt = entiernat<<n>>(M);
+  NInt = entiernat<<n>>(Nreg);
+  ExpInt = entiernat<<n>>(EXP);
+
+tel
+
+-- Instanciation pour n=8 bits, par exemple
+node PO8 = PO<<8>>;

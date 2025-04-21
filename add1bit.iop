@@ -1,0 +1,15 @@
+module "add1bit"
+inputs
+   x : bool;
+   y : bool;
+   rin : bool;
+outputs
+   s : bool;
+   rout : bool;
+panels
+   inpanel = col { $x $y $rin
+   };
+   outpanel = col { $s $rout
+   };
+   top = line { $inpanel $outpanel
+   };

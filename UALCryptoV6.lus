@@ -1,0 +1,96 @@
+include "multv6base2.lus"
+include "entierv6.lus"
+-----------------------------------------------------------------------
+
+-----------------------------------------------------------------------
+--  multiplexeur 4 entrees 
+--------------------------------------------------------------------------
+function mux4(i1,i2,e1,e2,e3,e4: bool) returns (s:bool);
+let
+s=e1 and not i1 and not i2
+or e2 and not i1 and  i2
+or e3 and  i1 and not i2
+or e4 and i1 and i2;
+tel;
+
+--------------------------------------------------------------------------
+-- porte OR nbits
+--------------------------------------------------------------------------
+function orn <<const n : int>> ( a : bool^n) returns (r : bool);
+var acc : bool^n;
+let
+acc[0] = a[0];
+acc[1..n-1] = map <<or;n-1>> (a[1..n-1] , acc [0..n-2]);
+r = acc[n-1];
+tel;
+
+--------------------------------------------------------------------------
+-- ADDITIONNEUR N BITS
+-- a et b deux op�randes, re : retenue entrante, rs: retenue sortante
+--------------------------------------------------------------------------
+function add_n_bits << const n : int>> ( a , b : bool^n ; re : bool )
+returns ( r : bool^n; rs:bool );
+var retint : bool^n+1;
+let
+retint[0] = re;
+(r, retint[1..n]) = map<<add1bit;n>> ( a , b , retint[0..n-1] );
+rs=retint[n];
+tel;
+
+--------------------------------------------------------------------------
+-- UAL N BITS
+--------------------------------------------------------------------------
+-- A et B sont des nombres codes sur n bits en base 2
+-- uc1 et uc0 sont les bits de commande qui determinent l'operation a effectuer:
+--uc1 uc0 operation
+-- 0  0   op1-op2
+-- 0  1   op1*op2 sur n bits (n bits de poids fort tronques)
+-- 1  0   op1 decale d'un cran � droite
+-- 1  1   op1 - 0
+-- emprunt est l'emprunt de la soustraction (inverse de la retenue sortante de l'addition)
+-- emprunt n'a pas de sens en cas de d�calage et multiplication
+-- Z est � 1 si le resultat T est nul
+-- T est le resultat sur n bits de l'UAL
+
+function ual_n_bits << const n : int >> ( A , B : bool^n ; uc1 , uc0 : bool )
+returns ( emprunt, Z : bool ; T : bool^n );
+	var R, op2: bool^n; M:bool^(2*n);decal:bool^n;
+	-- retenue sortante
+	C:bool;
+
+let
+	-- soustraction a l'aide de l'additionneur n bits
+-- si uc1=uc2=1 alors le deuxieme op�rande est �gal � 0:
+op2= map<<not;n>> (map<<and;n>>(B, (map <<not;n>> (map <<and;n>> (uc1^n, uc0^n)))));
+	(R, C) = add_n_bits << n>>(A , op2, true );
+	-- l'emprunt de la soustraction est le complement de la retenue de l'addition
+	emprunt= not C;
+	
+	--calcul de la multiplication
+	M=multnbits<<n>>(A,B);
+	
+	--decalage d'un bit
+	decal[n-1]=false;
+	decal[0..n-2]= A[1..n-1];
+	
+	--choix resultat de mult (decale de n bits) ou decalage d'un bit et soustraction
+T=map <<mux4;n>>( uc1^n , uc0^n, R, M[0..n-1], decal, R);
+    -- Z vaut 1 si aucun des bits du resultat est � 1
+    Z= not orn<<n>>(T);
+tel;
+
+--------------------------------------------------------------------------
+const a=8;
+function ualaff<<const n:int>>(  A , B : bool^n ; uc1 , uc0 : bool )
+returns ( C,Z : bool ; T : bool^n;  AE,BE,R:int );
+let
+(C,Z,T)=ual_n_bits <<n>>( A , B , uc1 , uc0);
+
+R=entiernat<<n>>(T);
+AE=entiernat<<n>>(A);
+BE=entiernat<<n>>(B);
+
+tel;
+node ualinst=ualaff<<a>>;
+
+

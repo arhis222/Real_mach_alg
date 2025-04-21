@@ -1,0 +1,62 @@
+-- Version sans CK
+------------------------------------------------------------------------
+include "../memoire.lus"
+
+node RegN <<const n : int>>
+  (ent    : bool^n;    -- bus de données à charger
+   char   : bool;      -- signal de chargement commun
+   reset  : bool;      -- reset synchrone (met tous les bits à 0)
+   set    : bool)      -- set asynchrone (met tous les bits à 1)
+  returns
+  (sort      : bool^n);   -- bus de sortie (état du registre)
+let
+  -- map applique n fois le noeud bascule,
+  -- en dupliquant char, reset et set en vecteurs de taille n
+  sort = map <<bascule; n>>
+        ( ent,        -- ent[i]
+          char^n,     -- char pour chaque bit
+          reset^n,    -- reset pour chaque bit
+          set^n       -- set pour chaque bit
+        );
+tel
+-- Pour juste 4 bits on instancie :
+node Reg4 = RegN<<4>>;
+
+
+-- Version avec CK
+-----------------------------------------------------------------------
+
+-- Registre n bits avec chargement conditionnel
+node registre_n_bits<<const n: int>>(
+    CK: bool;       -- Horloge globale du circuit --On n'utilise pas dans le code juste pour la clarté
+    chM: bool;      -- Signal de chargement (connecté à CHAR des bascules)
+    reset: bool;    -- Reset global (actif à 1)
+    set: bool;      -- Set global (actif à 1)
+    D: bool^n       -- Donnée d'entrée
+) 
+returns (
+    Q: bool^n       -- Sortie du registre
+);
+let
+    -- Génération des n bascules en parallèle
+    Q = map<<bascule; n>>(D, chM^n, reset^n, set^n);
+    
+    -- Connexion implicite de l'horloge :
+    -- Le signal CK est implicite dans l'opérateur -> et pre de la bascule
+tel;
+
+--exemple
+-- Registre M de 8 bits
+node registre_M(
+    Clock: bool;    -- Horloge --On n'utilise pas dans le code juste pour la clarté
+    load_M: bool;   -- Commande de chargement
+    rst: bool;      -- Reset
+    data_in: bool^8 -- Bus d'entrée
+) 
+returns (
+    M_out: bool^8   -- Sortie
+);
+let
+    M_out = registre_n_bits<<8>>(Clock, load_M, rst, false, data_in);
+    -- set mis à false car on n'initialise pas le registre M avec 1
+tel;

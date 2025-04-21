@@ -1,0 +1,20 @@
+# pc_test.rif  — CLK RESET Zexp C Odd
+                1 1 0 0 0    # cycle 1 : RESET=1 (setState met st[0]=1)
+                1 0 0 0 0    # cycle 2 : relâche reset, on reste en état 0 (loadM)
+
+                1 0 0 0 0    # cycle 3 : cycle d’horloge normal, st passes →1 (loadExp)
+                1 0 0 0 0    # cycle 4 : →2 (loadN)
+                1 0 0 0 0    # cycle 5 : →3 (initCode)
+
+                # Maintenant EXP≠0 et Odd=1 pour aller en multiply (état 5)
+                1 0 0 0 1    # cycle 6 : st[4]=1 → st[5]= multiply
+                # flags n’ont pas d’effet en state5, on peut laisser Zexp=0,Odd=1
+
+                1 0 0 0 0    # cycle 7 : st[5] → st[6] (shift)
+                1 0 0 0 0    # cycle 8 : st[6] → st[7] (square)
+                1 0 0 0 0    # cycle 9 : st[7] → st[4] (back to loopTest)
+
+                # Simulons exp=0 de façon forcée (Zexp=1) pour finir
+                1 0 1 0 0    # cycle 10: st[4] & Zexp → st[8] (done)
+                1 0 1 0 0    # cycle 11: reste en done (st[8] se recopie à lui‑même)
+                1 0 1 0 0    # cycle 12: idem
