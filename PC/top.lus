@@ -27,14 +27,18 @@ returns (
 
    mise_1 : bool;
 
+  selOp1 : bool^2;    -- commande UAL (issue de PC)
+  selOp2 : bool;
+  opUAL : bool^2;    -- commande UAL (issue de PC)
+
 
     
 );
 var
   Z, C, Odd       : bool;      -- flags retour UAL
-  selOp1          : bool^2;    -- commande UAL (issue de PC)
-  selOp2          : bool;      
-  opUAL           : bool^2;    
+  --selOp1          : bool^2;    -- commande UAL (issue de PC)
+  --selOp2          : bool;      
+  --opUAL           : bool^2;    
   -- vecteur de bits issu du slider
   busIn           : bool^n;    
   -- bus interne de sortie PO
@@ -50,6 +54,7 @@ var
   Sig_chM_interne : bool;
   Sig_chExp_interne : bool;
   Sig_chN_interne : bool;
+  Sig_chCode_interne : bool;
 
   -- vecteurs de bits issus des registres
   selExt : bool;  -- 1 = charger depuis busIn (initialisation), 0 = recirculer UAL
@@ -65,7 +70,7 @@ let
             reset,      -- reset PO = false (on ne reset pas ici)
             not begin,      -- selExt = !begin
             busIn,      -- bus d'entrée
-            begin,      -- chCode = begin (on force reset à 1 pour initialiser CODE=1)
+            Sig_chCode_interne,      -- chCode = begin (on force reset à 1 pour initialiser CODE=1)
             Sig_chM_interne,        -- chM     = checkbox chM
             Sig_chExp_interne,      -- chExp   = checkbox chEXP
             Sig_chN_interne,        -- chN     = checkbox chN
@@ -78,6 +83,7 @@ let
     Sig_chExp_interne = mux1(begin, Sig_chExp, chEXP);
     Sig_chN_interne = mux1(begin, Sig_chN, chN);
     Sig_chM_interne = mux1(begin, Sig_chM, chM);
+    Sig_chCode_interne = mux1(begin, Sig_chCode, false);
 
     reset = (not pre begin) and begin;
  
@@ -123,11 +129,13 @@ returns (
   Sig_chN: bool;
   Sig_chM : bool;
    mise_1 : bool;
-
+  selOp1 : bool^2;    -- commande UAL (issue de PC)
+  selOp2 : bool;
+  opUAL : bool^2;    -- commande UAL (issue de PC)
 );
 let
   -- On déplie top_debug avec n=8
-   (m, exp, n, end_, q, etat_courant,Sig_chExp,Sig_chCode,Sig_chN,Sig_chM, mise_1 ) =
+   (m, exp, n, end_, q, etat_courant,Sig_chExp,Sig_chCode,Sig_chN,Sig_chM, mise_1, selOp1, selOp2, opUAL) =
     top_debug<<8>>(begin, chM, chEXP, chN, input);
 tel;
 
