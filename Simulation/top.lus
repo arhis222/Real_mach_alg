@@ -1,6 +1,6 @@
 -- top.lus
 -- dépendances : PC.lus, PO.lus (votre 5.lus renommé), multv6base2.lus, UALCryptoV6.lus
-include "PC.lus"
+include "../PC/PC.lus"
 include "../PO/5.lus"
 
 
