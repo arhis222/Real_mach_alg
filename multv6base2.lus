@@ -1,0 +1,123 @@
+-----------------------------------------------------------------------------
+--multiplieur n bits realise a partir de and 2 entrees et d'additionneur 1 bit
+--2 operandes n bits positives ou nulles, resultats 2*n bits
+--le multiplicande (A) , le multiplieur (B) sont en base 2
+--Le resultat est en base 2
+----------------------------------------------------------------------------
+-- Additionneur 1 bit
+function add1bit( x, y, rin : bool)
+             returns
+            (s, rout : bool);
+let
+        s = x xor y xor rin;
+        rout = (x and y) or (x and rin) or (y and rin);
+tel
+
+(* qq noeuds utiles pour iterer avec le map *)
+-- replique: bool -> bool^n
+function replique<<const k: int>>(x: bool) returns (y: bool^k);
+let
+	y = x^k;
+tel
+
+-- shiftl
+-- decale x a gauche, concatene une derniere valeur 
+function shiftl<<const k: int>>(x:bool^k; y: bool) returns(o:bool^k);
+let
+	o = x[1..k-1] | [y] ;
+tel
+-- shiftr
+-- decale x a droite, concatene une premier valeur
+function shiftr<<const k: int>>(y:bool; x:bool^k) returns(o:bool^k);
+let
+	o = [y] | x[0..k-2];
+tel
+
+-- dernier element d'un tableau de taille k
+function last<<const k: int>>(x:bool^k) returns(o:bool);
+let
+	o = x[k-1];
+tel
+
+-- premier element d'un tableau de taille k
+function first<<const k: int>>(x:bool^k) returns(o:bool);
+let
+	o = x[0];
+tel
+
+(* multiplieur nn * nn bits -> 2*nn bits *)
+function multnbits<< const nn: int>>(A, B: bool^nn) returns(s: bool^(2*nn)
+);
+var
+-- resultat et retenues intermediaires
+	r, x: bool^nn^(nn-1);
+-- arguments de la "matrice" de full-adders
+	ix, iy, ir: bool^nn^(nn-1);
+let
+	-- une matrice d'additionneurs 3 bits,
+	-- sur des matrices d'args et de retenues à définir ...
+	(x, r) = map
+		<<
+			map<<add1bit, nn>>,
+			nn-1
+		>> (ix, iy, ir);
+
+	-- ARGUMENT no 1: 
+	-- ix[0] = [ a[0] and b[1], a[1] and b[1], ..., a[nn-1] and b[1]]
+	-- ix[1] = [ a[0] and b[2], a[1] and b[2], ..., a[nn-1] and b[1]]
+	-- ix[2] = [ a[0] and b[3], a[1] and b[3], ..., a[nn-1] and b[3]]
+	-- ix[nn-2] = [ a[0] and b[nn-1], a[1] and b[nn-1], ..., a[nn-1] and b[nn-1]]
+	ix = map<<
+		map<<and, nn>>,
+		nn-1
+	>> (A^(nn-1), map<<replique<<nn>>,nn-1>>(B[1..nn-1]));
+
+	-- ARGUMENT no 2: 
+	-- iy, le 0 est particulier:
+	-- iy[0] = [ a[1] and b[0], a[2] and b[0], ..., a[nn-1] and b[0], false ]
+	iy[0] = (map<<and, nn-1>>(A[1..nn-1], B[0]^(nn-1))) | [ false] ;
+	-- puis pour 1..nn-2 c'est la partie haute du x prec. | la derniere ret. prec
+	--iy[1] = [ x[0][1], x[0][2], ..., x[0][nn-1], r[0][nn-1] ]
+	--iy[2] = [ x[1][1], x[1][2], ..., x[1][nn-1], r[1][nn-1] ]
+	--iy[nn-2] = [ x[nn-3][1], x[nn-3][2], ..., x[nn-3][nn-1], r[nn-3][nn-1] ]
+	--ou encore :
+	--iy[1] = shiftl<<nn>(x[0],last<<nn>>(r[0]));
+	--iy[2] = shiftl<<nn>(x[1],last<<nn>>(r[1]));
+	-- ...
+	--iy[nn-2] = shiftl<<nn>(x[nn-3],last<<nn>>(r[nn-3]));
+	iy[1..nn-2] = map<<shiftl<<nn>>,nn-2>>(x[0..nn-3], map<<last<<nn>>,nn-2>>(r[0..nn-3]));
+
+	-- RETENUES INTERMEDAIRES:
+	-- ir[0][0] = false
+	-- ir[0][1] = r[0][0]
+	-- ...
+	-- ir[0][n-1] = r[0][n-2]
+	-- ou :
+	-- ir[0] = shiftr<<nn>>(false,r[0])
+   -- ir[1] = shiftr<<nn>>(false,r[1])
+	-- ...
+	-- ir[nn-2] = shiftr<<nn>>(false,r[nn-2])
+	ir = map<<shiftr<<nn>>, nn-1>>(false^(nn-1),r);
+
+	--SORTIE:
+	-- le tout premier ...
+	s[0] = A[0] and B[0];	
+	-- les nn-2 suivants ...
+	--s[1] = x[0][0];
+	--s[2] = x[1][0];
+	--...
+	--s[nn-2] = x[nn-3][0];	 
+	s[1..nn-2] = map<<first<<nn>>,nn-2>>(x[0..nn-3]);
+	-- les nn-1 avant-derniers
+	--s[nn-1] = x[nn-2][0];
+	--s[nn]   = x[nn-2][1];
+	--s[nn+1] = x[nn-2][2];
+	--...
+	--s[2*nn-2] = x[nn-2][nn-1];
+	s[nn-1 .. 2*nn-2] = x[nn-2][0..nn-1];
+
+	-- le tout dernier
+	s[2*nn-1] = r[nn-2][nn-1];
+tel
+
+function titi = multnbits<<4>>;

@@ -2,10 +2,39 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Debug chiffrement",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/chiffrement",
+      "args": [
+        "31",
+        "13",
+        "33"
+      ],
+      "stopAtEntry": true,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "console": "integratedTerminal",
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ]
+    },
+    {
       "name": "C/C++ Runner: Debug Session",
       "type": "cppdbg",
       "request": "launch",
-      "args": [],
+      "args": [
+        "31",
+        "13",
+        "33"
+      ],
       "stopAtEntry": false,
       "externalConsole": false,
       "cwd": "/home/arhis/Desktop/repertoire/ArchMat/Real_mach_alg",

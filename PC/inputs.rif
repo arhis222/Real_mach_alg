@@ -1,0 +1,9 @@
+# inputs.rif
+# lignes : m7…m0 exp7…exp0 n7…n0 start
+# exemple : m=13, exp=37, n=77
+0 0 0 0 1 1 0 1   0 0 1 0 0 1 0 1   0 1 0 0 1 1 0 1   1
+# dans Luciole : 
+#  - on met m_in = 00001101  (13)
+#  - exp_in = 00100101  (37)
+#  - n_in   = 01001101  (77)
+#  - start  = 1
