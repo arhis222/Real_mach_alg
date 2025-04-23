@@ -86,7 +86,7 @@ let
   -----------------------------------------------------------------
   -- 6) Bus de sortie et drapeaux 
   busOut = CODE;    -- on n’exporte que CODE
-  C      = Borrow;  -- emprunt de la soustraction
+  C      = not Borrow;  -- emprunt de la soustraction
   Z      = Zflag;   -- résultat nul ?
 
   --pour le voir mieux --debug 

@@ -51,20 +51,20 @@ void main(int argc, char * argv[])
     sscanf(argv[3], "%ld", &n);
     
     code = 1;
-    while (exp > 0) // exp != 0 donc flag (Z==0)
+    while (exp > 0) // exp != 0 donc flag (not Z)
     {
         if ((exp & 1) > 0)  //(LSB == 1) Last Significant Bit
         {
             // code = (code * m) % n, calculé par soustractions répétées
             code = code * m;
-            while (code >= n) //while C == 0
+            while (code >= n) //while C
                 code = code - n;
             
         }
         exp = exp >> 1;  // màj flag Z 
         // m = (m * m) % n, calculé par soustractions répétées
         m = m * m;
-        while (m >= n) //while C == 0
+        while (m >= n) //while C
             m = m - n;
         
     }
