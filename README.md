@@ -1,4 +1,4 @@
-# 🔐 RSA Modular Exponentiation – Hardware Design (Lustre)
+# RSA Modular Exponentiation – Hardware Design (Lustre)
 
 This project focuses on the design, implementation, and simulation of a hardware circuit dedicated to RSA modular exponentiation:
 
@@ -8,11 +8,11 @@ The system is implemented using the Lustre synchronous language, with a structur
 
 ---
 
-## 📌 Architecture Overview
+## Architecture Overview
 
 The design follows a classic Hardware/Software Co-design methodology, separating the system into:
 
-### 🔹 Operative Part (PO)
+### Operative Part (PO)
 
 The data path includes:
 
@@ -21,7 +21,7 @@ The data path includes:
 - A custom Arithmetic Logic Unit (ALU)
 - Status flag generation (Zero, Carry, Odd)
 
-### 🔹 Control Part (PC)
+### Control Part (PC)
 
 A Finite State Machine (FSM) responsible for:
 
@@ -33,7 +33,7 @@ The FSM uses a 1-among-N encoding with 11 states (st[0..10]).
 
 ---
 
-## ⚙️ Algorithmic Adaptation for Hardware
+## Algorithmic Adaptation for Hardware
 
 To comply with hardware constraints, the classical RSA algorithm was adapted to use only:
 
@@ -41,7 +41,7 @@ To comply with hardware constraints, the classical RSA algorithm was adapted to 
 - Multiplication
 - Bit-shifting
 
-### 🔸 Modulo via Repeated Subtraction
+### Modulo via Repeated Subtraction
 
 Instead of division-based modulo:
 
@@ -49,7 +49,7 @@ r = a mod n
 
 The operation is implemented by repeatedly subtracting n from a until the result is strictly less than n.
 
-### 🔸 Square-and-Multiply
+### Square-and-Multiply
 
 Exponentiation is implemented using binary exponentiation:
 
@@ -62,16 +62,16 @@ This minimizes the number of multiplications and is well-suited for hardware imp
 
 ---
 
-## 🛠️ Implementation Details
+## Implementation Details
 
-### 🔹 Lustre Hardware Modeling
+### Lustre Hardware Modeling
 
 - Gate-level structural modeling
 - Boolean variables and explicit logic
 - Avoidance of high-level arithmetic constructs
 - Explicit register-based state evolution
 
-### 🔹 Custom ALU (UAL)
+### Custom ALU (UAL)
 
 The ALU supports four operations encoded on 2 bits:
 
@@ -84,11 +84,11 @@ The ALU supports four operations encoded on 2 bits:
 
 ---
 
-## 🚀 Simulation & Validation
+## Simulation & Validation
 
 The design was validated using the Luciole simulator.
 
-### 🔹 Example Test Case
+### Example Test Case
 
 Parameters:
 p = 3, q = 11 → n = 33
@@ -107,7 +107,7 @@ The hardware circuit correctly computes the expected modular exponentiation resu
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 PO/
  ├── registre_n_bits.lus
@@ -122,14 +122,13 @@ Sımulation/
 
 ---
 
-## 👥 Authors
+## Author
 
 - Arhan UNAY
-- Utku GEMICIOGLU
 
 ---
 
-### 🎓 Academic Context
+### Academic Context
 
 Developed as part of the INFO3 – Architecture and Material (ArchMat) course  
 Polytech Grenoble – April 2025
