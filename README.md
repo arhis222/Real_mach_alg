@@ -117,7 +117,7 @@ PO/
 PC/
  └── FSM control logic (11-state encoding)
 
-top.lus
+Sımulation/
  └── Top-level integration of PC and PO
 
 ---
